@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bruno Treinos - Iniciante</title>
+    <style>
+        :root { 
+            --primary: #3b82f6; --bg: #0b0f1a; --card: #1e293b; 
+            --text-main: #f1f5f9; --accent: #10b981; --reab: #fbbf24; 
+            --abs: #f59e0b; --danger: #ef4444; --diastase: #a855f7;
+        }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text-main); margin: 0; padding: 10px; padding-bottom: 40px; }
+        .header { text-align: center; padding: 15px 0; }
+        .header h1 { margin: 0; color: var(--primary); font-size: 1.2rem; letter-spacing: 2px; }
+
+        .day-container { margin-bottom: 10px; border-radius: 12px; overflow: hidden; border: 1px solid #334155; }
+        .day-header { 
+            background: var(--card); padding: 15px; cursor: pointer; 
+            display: flex; justify-content: space-between; align-items: center;
+            border-left: 6px solid var(--primary);
+        }
+        /* Cor especial para a seção de Diástase */
+        .diastase-section { border-left-color: var(--diastase); background: rgba(168, 85, 247, 0.05); }
+        
+        .day-header h3 { margin: 0; font-size: 0.9rem; text-transform: uppercase; }
+        .day-content { display: none; padding: 10px; background: #131c2e; }
+        .day-container.active .day-content { display: block; }
+
+        .exercise { background: rgba(255,255,255,0.03); margin-bottom: 15px; padding: 12px; border-radius: 10px; border: 1px solid #2d3a4f; }
+        .ex-info { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .input-carga { background: #0f172a; border: 1px solid var(--primary); border-radius: 6px; color: #fff; padding: 5px; width: 60px; text-align: center; font-weight: bold; }
+
+        .series-row { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+        .btn-serie { width: 38px; height: 38px; border-radius: 50%; border: 2px solid #475569; background: transparent; color: #94a3b8; font-weight: bold; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; }
+        .btn-serie.done { background: var(--accent); color: #000; border-color: var(--accent); box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); }
+
+        .timer-display { color: var(--reab); font-weight: bold; font-size: 0.9rem; margin-left: auto; background: rgba(251, 191, 36, 0.1); padding: 4px 10px; border-radius: 20px; min-width: 50px; text-align: center; }
+        .btn-small { padding: 8px 12px; font-size: 0.7rem; border-radius: 6px; background: #1e293b; color: #cbd5e1; border: 1px solid #475569; text-decoration: none; margin-right: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>🛡️ BRUNO TREINOS</h1>
+</div>
+
+<div id="app"></div>
+
+<script>
+    const db = {
+        // ... (seus exercicios de academia anteriores continuam aqui)
+        supino_inclinado: { nome: "Supino Inclinado Halter", alvo: "Peito Superior", reps: "3x10", query: "supino inclinado halteres", passos: ["Banco 30°", "Até o peito", "Suba sem bater"] },
+        cross_over: { nome: "Cross Over Médio", alvo: "Peitoral", reps: "3x12", query: "crossover polia media", passos: ["Polia altura ombros", "Aperte o peito"] },
+        supino_reto: { nome: "Supino Reto Barra", alvo: "Peitoral", reps: "3x8", query: "supino reto barra", passos: ["Barra no mamilo", "Cotovelos 45°"] },
+        desenv_halteres: { nome: "Desenv. Ombro Halter", alvo: "Ombros", reps: "3x10", query: "desenvolvimento ombro halteres", passos: ["Empurre para cima", "Até a orelha"] },
+        elev_lateral: { nome: "Elevação Lateral", alvo: "Ombro Lateral", reps: "3x15", query: "elevacao lateral halteres", passos: ["Linha do ombro", "Controle"] },
+        triceps_pulley: { nome: "Tríceps Pulley", alvo: "Tríceps", reps: "4x12", query: "triceps pulley", passos: ["Cotovelos colados", "Estique"] },
+        remada_serrote: { nome: "Remada Serrote", alvo: "Costas", reps: "3x10", query: "remada serrote", passos: ["Puxe ao quadril", "Coluna reta"] },
+        puxada_alta: { nome: "Puxada Frente", alvo: "Dorsal", reps: "3x12", query: "puxada frente aberta", passos: ["Ao queixo", "Alongue"] },
+        face_pull: { nome: "Face Pull", alvo: "Post. Ombro", reps: "3x15", query: "face pull corda", passos: ["Corda na testa", "Cotovelos abertos"] },
+        rosca_inclinada: { nome: "Rosca Inclinada", alvo: "Bíceps", reps: "3x12", query: "rosca inclinado halter", passos: ["Banco 45°", "Alongue"] },
+        rosca_martelo: { nome: "Rosca Martelo", alvo: "Bíceps/Antebraço", reps: "3x12", query: "rosca martelo", passos: ["Pegada neutra", "Aperte"] },
+        leg_press_45: { nome: "Leg Press 45", alvo: "Quadríceps", reps: "4x12", query: "leg press 45", passos: ["Lombar colada", "Não trave joelhos"] },
+        agacha_sumo: { nome: "Agachamento Sumô", alvo: "Coxas", reps: "3x12", query: "agachamento sumo", passos: ["Pés afastados", "Halter no meio"] },
+        extensora: { nome: "Cadeira Extensora", alvo: "Quadríceps", reps: "3x15", query: "cadeira extensora", passos: ["Contração máxima"] },
+        flexora: { nome: "Mesa Flexora", alvo: "Posterior", reps: "3x12", query: "mesa flexora", passos: ["Puxe ao glúteo"] },
+        panturrilha: { nome: "Panturrilha", alvo: "Panturrilha", reps: "4x20", query: "panturrilha em pe", passos: ["Máxima amplitude"] },
+        
+        // EXERCÍCIOS ESPECÍFICOS PARA DIÁSTASE
+        vacuum: { nome: "Vacuum (LPF)", alvo: "Transverso Abdominal", reps: "4x45s", query: "stomach vacuum como fazer", passos: ["Solte todo o ar", "Sugue o abdômen sob as costelas", "Mantenha sem respirar", "Expire devagar"], timer: 45 },
+        deadbug: { nome: "Dead Bug Consciente", alvo: "Core Profundo", reps: "3x12", query: "dead bug exercicio diástase", passos: ["Costas totalmente no chão", "Braço e perna opostos descem", "Não deixe a lombar arquear"], timer: 60 },
+        ponte: { nome: "Ponte com Ativação", alvo: "Core / Glúteo", reps: "3x15", query: "ponte para diástase", passos: ["Suba o quadril", "Aperte o umbigo contra a coluna", "Expire na subida"], timer: 60 },
+        prancha_lateral: { nome: "Prancha Lateral (Joelhos)", alvo: "Oblíquos / Estabilidade", reps: "3x30s", query: "prancha lateral iniciante", passos: ["Apoie joelho e cotovelo", "Mantenha o corpo reto", "Sinta a lateral do abdômen"], timer: 30 }
+    };
+
+    const rotina = [
+        { dia: "SEGUNDA - PUSH", exs: ["supino_inclinado", "cross_over", "supino_reto", "desenv_halteres", "elev_lateral", "triceps_pulley"] },
+        { dia: "TERÇA - PULL", exs: ["remada_serrote", "puxada_alta", "face_pull", "rosca_inclinada", "rosca_martelo"] },
+        { dia: "QUARTA - LEGS", exs: ["leg_press_45", "agacha_sumo", "extensora", "flexora", "panturrilha"] },
+        { dia: "QUINTA - DESCANSO", exs: [] },
+        { dia: "SEXTA - PUSH II", exs: ["supino_inclinado", "cross_over", "supino_reto", "desenv_halteres", "elev_lateral", "triceps_pulley"] },
+        { dia: "SÁBADO - MIX", exs: ["puxada_alta", "remada_serrote", "leg_press_45", "extensora", "rosca_martelo"] },
+        { dia: "CASA 🏠", tipo: "especial", exs: ["vacuum", "deadbug", "ponte", "prancha_lateral"] }
+    ];
+
+    let intervaloGlobal;
+
+    function iniciarCronometro(displayId, tempoInicial) {
+        clearInterval(intervaloGlobal);
+        let tempo = tempoInicial;
+        const display = document.getElementById(displayId);
+        display.innerText = tempo + "s";
+        
+        intervaloGlobal = setInterval(() => {
+            tempo--;
+            display.innerText = tempo + "s";
+            if(tempo <= 0) {
+                clearInterval(intervaloGlobal);
+                display.innerText = "FIM!";
+                if(window.navigator.vibrate) window.navigator.vibrate(300);
+            }
+        }, 1000);
+    }
+
+    function toggleSerie(btn, displayId, tempoPadrao) {
+        btn.classList.toggle('done');
+        if(btn.classList.contains('done')) {
+            iniciarCronometro(displayId, tempoPadrao);
+        }
+    }
+
+    function render() {
+        const app = document.getElementById('app');
+        app.innerHTML = '';
+
+        rotina.forEach((d, dIdx) => {
+            const container = document.createElement('div');
+            container.className = `day-container ${d.tipo === 'especial' ? 'active' : ''}`;
+            
+            let html = `
+                <div class="day-header ${d.tipo === 'especial' ? 'diastase-section' : ''}" onclick="this.parentElement.classList.toggle('active')">
+                    <h3>${d.dia}</h3>
+                    <span style="font-size:0.7rem">▼</span>
+                </div>
+                <div class="day-content">
+            `;
+
+            if(d.exs.length === 0) html += `<p style="text-align:center; padding:20px; color:#666;">Dia de Descanso Total</p>`;
+
+            d.exs.forEach((k, eIdx) => {
+                const ex = db[k];
+                const idCarga = `v16-cg-${dIdx}-${eIdx}`;
+                const idTimer = `timer-${dIdx}-${eIdx}`;
+                const numSeries = parseInt(ex.reps.split('x')[0]) || 3;
+                const tempoEx = ex.timer || 60;
+
+                html += `
+                    <div class="exercise">
+                        <div class="ex-info">
+                            <div>
+                                <strong style="font-size:0.85rem; display:block; color:${d.tipo==='especial'?'var(--diastase)':'var(--text-main)'}">${ex.nome}</strong>
+                                <small style="color:var(--accent)">${ex.reps} • ${ex.alvo}</small>
+                            </div>
+                            ${d.tipo !== 'especial' ? `<input type="text" inputmode="decimal" class="input-carga" placeholder="kg" value="${localStorage.getItem(idCarga) || ''}" onchange="localStorage.setItem('${idCarga}', this.value)">` : ''}
+                        </div>
+                        
+                        <div style="margin-bottom:10px;">
+                            <button class="btn-small" onclick="alert('COMO FAZER:\\n- ${ex.passos.join('\\n- ')}')">MANUAL</button>
+                            <a href="https://www.youtube.com/results?search_query=${ex.query}" target="_blank" class="btn-small">VÍDEO</a>
+                        </div>
+
+                        <div class="series-row">
+                            ${Array.from({length: numSeries}).map((_, i) => `
+                                <button class="btn-serie" onclick="toggleSerie(this, '${idTimer}', ${tempoEx})">S${i+1}</button>
+                            `).join('')}
+                            <div class="timer-display" id="${idTimer}">--</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `</div>`;
+            container.innerHTML = html;
+            app.appendChild(container);
+        });
+    }
+
+    window.onload = render;
+</script>
+
+</body>
+</html>
